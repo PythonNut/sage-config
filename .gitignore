@@ -1,0 +1,5 @@
+*
+!/init.sage
+!.gitignore
+!.gitmodules
+!.gitattributes
