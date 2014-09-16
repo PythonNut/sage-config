@@ -1,0 +1,3 @@
+[submodule "chemistry"]
+	path = chemistry
+	url = https://github.com/PythonNut/chemistry.py.git
