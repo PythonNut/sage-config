@@ -823,6 +823,9 @@ class Magic(object):
             return self.array(self.unravel(args[0]))
             return self.Mat(self.enravel(self.unravel(args[0])))
 
+        elif self.argParse("n+", *args):
+            return vector(args[0])
+
         elif self.argParse("e+",*args):
             return self.unravel(map(self.ss,args[0]))
 
