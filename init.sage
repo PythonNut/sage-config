@@ -797,11 +797,11 @@ class Magic(object):
 
         elif self.argParse("e,n,n",*args):
             v, e = args[0].variables()[0], args[0]
-            return S.sub(e,[v == args[1]]) - S.sub(e,[v == args[2]])
+            return S.sub(e,[v == args[2]]) - S.sub(e,[v == args[1]])
 
         elif self.argParse("e,n,n,e", *args):
             e, v = args[0], args[3]
-            return S.sub(e,[v == args[1]]) - S.sub(e,[v == args[2]])
+            return S.sub(e,[v == args[2]]) - S.sub(e,[v == args[1]])
 
         elif self.argParse("e*",*args):
             return self.unravel(map(self.ss,args))
