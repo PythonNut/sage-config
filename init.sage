@@ -473,8 +473,12 @@ class Magic(object):
         for r in remove:
             out = out.replace(r,"")
         score = len(out)
-        if str(x) == str(factor(x)):
-            score = score * 0.7
+
+        try:
+            if str(x) == str(factor(x)):
+                score = score * 0.7
+        except NotImplementedError: pass
+
         return score
 
     # get all possible alternate forms
