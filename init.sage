@@ -281,45 +281,6 @@ class Magic(object):
         def proj(self, a, b):
             return (b.dot(a)/S.norm(a)^2)*(a)
 
-    # a homebrew matrix implementation
-    class Mat(np.matrix):
-        from sagenb.misc.sageinspect import sagenb_getdef as inspect
-        #def __new__(self, *args, **kwargs):
-        #    if len(args) > 1 and Integer(len(args)).is_square():
-        #        super.__new__(self, [args], **kwargs)
-        #    else:
-        #        super.__new__(self, *args, **kwargs)
-
-        def __init__(self, *args, **kwargs):
-            if len(args) > 1 and Integer(len(args)).is_square():
-                super.__init__([args], **kwargs)
-                self.reshape([int(S.m.sqrt(len(args)))]*2)
-
-        def S(self):
-            return np.array(map(S,list(self))).reshape(self.shape)
-
-        def getattr(self,attr):
-            err = AttributeError("'Mat' object has no attribute '%s'"%attr)
-            mods = [np.linalg,np,scipy]
-            for mod in mods:
-                if hasattr(mod, attr):
-                    attr = getattr(mod,attr)
-                    break
-            else: raise err
-
-            def f(x): return "=" not in x and "*" not in x
-            sig = filter(f,inspect()[1:-1].split(","))
-            if len(sig) == 1:
-                def temp():
-                    return attr(self)
-                return Function(temp)
-            elif len(sig) == 2:
-                def temp(x):
-                    return attr(self,x)
-                return Function(temp)
-
-            raise err
-
     def __init__(self):
         # shortcut tokens
         self.tokens = {
@@ -822,7 +783,7 @@ class Magic(object):
 
         elif self.argParse("*++",*args):
             return self.array(self.unravel(args[0]))
-            return self.Mat(self.enravel(self.unravel(args[0])))
+            return Matrix(self.enravel(self.unravel(args[0])))
 
         elif self.argParse("n+", *args):
             return vector(args[0])
