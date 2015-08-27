@@ -621,16 +621,16 @@ class Magic(object):
             ("S.kelvin", ["K", "kelvin"]),
             ("S.celsius",["C", "celsius"]),
             ("S.liter",["L", "liter", "liters"]),
-            ("S.hertz",["Hz", "hertz"]),
+            ("S.hertz",["hz", "Hz", "hertz"]),
 
             # prefix SI units (large)
             ("S.kilogram", ["kg", "Kg", "kilogram", "kilograms"]),
             ("S.kilometer", ["km", "Km", "kilometer", "kilometers"]),
 
             # prefix SI units (small)
-            ("S.miligram", ["mg", "miligram", "miligrams"]),
-            ("S.milimeter", ["mm", "milimeter", "milimeters"]),
-            ("S.milisecond", ["ms", "milisecond", "miliseconds"]),
+            ("S.gram/1e3", ["mg", "miligram", "miligrams"]),
+            ("S.meter/1e3", ["mm", "milimeter", "milimeters"]),
+            ("S.second/1e3", ["ms", "milisecond", "miliseconds"]),
 
             # standard time units
             ("S.hour", ["hr", "hour", "hours"]),
