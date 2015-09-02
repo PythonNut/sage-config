@@ -491,11 +491,10 @@ class Magic(object):
                 "simplify",
                 "simplify_full",
                 "simplify_rational",
-                "simplify_exp",
+                "canonicalize_radical",
                 "simplify_log",
                 "simplify_trig",
                 "simplify_factorial",
-                "simplify_radical"
             ]
 
             forms = list(forms)
