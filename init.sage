@@ -334,8 +334,12 @@ class Magic(object):
         self.mro = [self.Math]
         
         _try_import(self.mro,"numpy")
-        _try_import(self.mro,"numpy.linalg")
+        self.mro.append(numpy.linalg)
         _try_import(self.mro,"scipy")
+        try:
+            import scipy.stats
+            self.mro.append(scipy.stats)
+        except: pass
         _try_import(self.mro,"matplotlib")
         _try_import(self.mro,"math")
         _try_import(self.mro,"cmath")
