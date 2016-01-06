@@ -137,6 +137,8 @@ class Magic(object):
      - LaTeX
     """
 
+    norm = RealDistribution("gaussian", 1)
+
     # Wrappers for SymPy functionality
     class SymPy(object):
         # convert expression to SymPy
