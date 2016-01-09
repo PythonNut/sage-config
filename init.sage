@@ -53,21 +53,7 @@ assume(z,"real")
 assume(i,"integer")
 assume(k,"integer")
 
-def parsolve(tx,ty):
-    import itertools as it
-    x, y = var("x,y")
-    vx, vy = tx.variables()[0], ty.variables()[0]
-    eq_tx = solve(x==tx,vx)
-    eq_ty = solve(y==ty,vy)
-    solutions = set()
-    for ix, iy in it.product(eq_tx,eq_ty):
-        solutions.add(tuple(solve(ix.rhs() == iy.rhs(),y)))
-    solutions = [i[0] if len(i) == 1 else i for i in solutions]
-    if len(solutions) == 1:
-        return solutions[0]
-    else:
-        return solutions
-            
+
 def r(deg): return (deg/180*pi)
 def d(rad): return (rad/pi*180)
 
@@ -87,48 +73,6 @@ def pp(x,q=True):
     except: print x
     if q: return x
 
-def Sv(f,*var,**kwargs):
-    if not isinstance(f,list):
-        args,f,var=[f]+list(var),[],[]
-        for i in args:
-            if not i.is_symbol():
-                f.append(i)
-            else: var.append(i)
-    vars=set()
-    for i in range(len(f)):
-        for v in f[i].variables():
-            vars.add(v)
-        if f[i].is_relational():
-            f[i]=(f[i].lhs()-f[i].rhs())
-        f[i]=f[i]._sympy_()
-    if var == []: var=list(vars)
-    #print f,var
-    out=sympy.solve(f,*var,dict=True,**kwargs)
-    for i in range(len(out)):
-        try:
-            if type(out[i]) == tuple:
-                out[i] = list(out[i])
-            out[i] = out[i]._sage_()
-        except AttributeError:
-            try:
-                for k in range(len(out[i])):
-                    out[i][k] = out[i][k]._sage_()
-            except AttributeError:
-                pass
-            #except TypeError:
-            #    pass
-    return out
-
-def inverse(f,x=None):
-    try:
-        if not x:
-            x=f.variables()[-1]
-        y = var('y')
-        g = (f - y).roots(x, multiplicities=False)
-        return [expr.subs(y=x) for expr in g]
-    except RuntimeError as e:
-        return []
-    
 class Magic(object):
     """
     This is the magic SAGE class. It contains lots of functionality
@@ -141,6 +85,58 @@ class Magic(object):
         __call__ = RealDistribution.cum_distribution_function
 
     norm = my_RealDistribution("gaussian", 1)
+
+    def inverse(self, f, x=None):
+        try:
+            if not x:
+                x=f.variables()[-1]
+            y = var('y')
+            g = (f - y).roots(x, multiplicities=False)
+            return [expr.subs(y=x) for expr in g]
+        except RuntimeError as e:
+            return []
+
+    def parsolve(self, tx,ty):
+        import itertools as it
+        x, y = var("x,y")
+        vx, vy = tx.variables()[0], ty.variables()[0]
+        eq_tx = solve(x==tx,vx)
+        eq_ty = solve(y==ty,vy)
+        solutions = set()
+        for ix, iy in it.product(eq_tx,eq_ty):
+            solutions.add(tuple(solve(ix.rhs() == iy.rhs(),y)))
+            solutions = [i[0] if len(i) == 1 else i for i in solutions]
+        if len(solutions) == 1:
+            return solutions[0]
+        else:
+            return solutions
+
+    def sv(self,f,*var,**kwargs):
+        if not isinstance(f,list):
+            args,f,var=[f]+list(var),[],[]
+            for i in args:
+                if not i.is_symbol():
+                    f.append(i)
+                else: var.append(i)
+        vars=set()
+        for i in range(len(f)):
+            for v in f[i].variables():
+                vars.add(v)
+            if f[i].is_relational():
+                f[i]=(f[i].lhs()-f[i].rhs())
+            f[i]=f[i]._sympy_()
+        if var == []: var=list(vars)
+        #print f,var
+        out=sympy.solve(f,*var,dict=True,**kwargs)
+        # return out
+        ret = []
+        for solution in out:
+            solution = [k._sage_() == v._sage_() for k,v in solution.items()]
+            if len(solution) == 1:
+                ret.append(solution[0])
+            else:
+                ret.append(solution)
+        return ret
 
     # Wrappers for SymPy functionality
     class SymPy(object):
