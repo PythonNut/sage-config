@@ -137,7 +137,10 @@ class Magic(object):
      - LaTeX
     """
 
-    norm = RealDistribution("gaussian", 1)
+    class my_RealDistribution(RealDistribution):
+        __call__ = RealDistribution.cum_distribution_function
+
+    norm = my_RealDistribution("gaussian", 1)
 
     # Wrappers for SymPy functionality
     class SymPy(object):
