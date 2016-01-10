@@ -861,3 +861,4 @@ class Magic(object):
 S = Magic()
 
 %rehashx
+%autocall 1
