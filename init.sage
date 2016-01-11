@@ -138,6 +138,9 @@ class Magic(object):
                 ret.append(solution)
         return ret
 
+    def unique(self, lst):
+        return list(coll.OrderedDict.fromkeys(lst))
+    
     # Wrappers for SymPy functionality
     class SymPy(object):
         # convert expression to SymPy
