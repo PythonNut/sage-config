@@ -242,10 +242,12 @@ class Magic(object):
 
     class Function(object):
         def __init__(self, f):
-            if f.__class__ == Expression:
+            if isinstance(f,Expression):
                 def temp(x):
-                    return f(*{str(f.variables()[0]):x})
-            self.f = f
+                    return f(**{str(f.variables()[0]):x})
+                self.f = temp
+            else:
+                self.f = f
             
         def __mul__(self, o):
             if o.__class__ == self.__class__:
