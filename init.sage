@@ -815,6 +815,12 @@ class Magic(object):
                 temp = temp * fun
             return temp
 
+        elif self.argParse("c*,*++", *args):
+            return map(lambda row:S(*list(args[:-1])+[row]), args[-1])
+
+        elif self.argParse("c*,*+", *args):
+            return map(S(*args[:-1]),args[-1])
+
     # proxy functions for common stuff
     def __add__(self,x):
         if self.argParse("i",x):
