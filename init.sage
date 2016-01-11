@@ -393,6 +393,7 @@ class Magic(object):
             "d" : [dict],
             "*" : [object],
             "a" : [np.ndarray],
+            "c" : [coll.Callable],
         }
         arg = arg.split(",")
 
@@ -802,11 +803,17 @@ class Magic(object):
         elif self.argParse("n+", *args):
             return vector(args[0])
 
-        elif self.argParse("e+",*args):
+        elif self.argParse("e+", *args):
             return self.unravel(map(self.ss,args[0]))
 
         elif len(args) == 1 and str(type(args[0])) == "<type 'function'>":
             return self.Function(args[0])
+
+        elif self.argParse("c*", *args):
+            temp = self.Function(args[0])
+            for fun in args[1:]:
+                temp = temp * fun
+            return temp
 
     # proxy functions for common stuff
     def __add__(self,x):
