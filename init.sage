@@ -82,7 +82,13 @@ class Magic(object):
     """
 
     class my_RealDistribution(RealDistribution):
-        __call__ = RealDistribution.cum_distribution_function
+        def __call__(self, x1, x2 = float("-inf")):
+            try:
+                a1 = self.cum_distribution_function(x1)
+                a2 = self.cum_distribution_function(x2)
+                return abs(a1 - a2)
+            except: pass
+            return numpy.linalg.norm(x1)
 
     norm = my_RealDistribution("gaussian", 1)
 
