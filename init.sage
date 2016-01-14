@@ -367,7 +367,8 @@ class Magic(object):
         _try_import(self.mro,"re")
         _try_import(self.mro,"sage.plot.colors")
         _try_import(self.mro,"collections")
-        
+        _try_import(self.mro,"random")
+
         for unit_name in units.trait_names():
             self.mro.append(getattr(units,unit_name))
 
