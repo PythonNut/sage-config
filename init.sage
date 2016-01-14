@@ -90,6 +90,9 @@ class Magic(object):
             except: pass
             return numpy.linalg.norm(x1)
 
+        def __getitem__(self, x1):
+            return self.cum_distribution_function_inv(x1)
+
     norm = my_RealDistribution("gaussian", 1)
 
     def inverse(self, f, x=None):
