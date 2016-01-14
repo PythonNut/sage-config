@@ -150,6 +150,27 @@ class Magic(object):
     def chunks(self, lst, n):
         return zip(*[iter(lst)]*n)
 
+    def multimap(self, fns, lst):
+        dummy = lst[0]
+        filter_p = []
+
+        for f in fns:
+            temp = f(dummy)
+            if isinstance(temp, bool):
+                filter_p.append(True)
+            else:
+                filter_p.append(False)
+                dummy = temp
+
+        res = lst
+        for f, is_filter in zip(fns, filter_p):
+            if is_filter:
+                res = filter(f, res)
+            else:
+                res = map(f, res)
+
+        return res
+
     # Wrappers for SymPy functionality
     class SymPy(object):
         # convert expression to SymPy
@@ -445,11 +466,7 @@ class Magic(object):
                         for item in args[index]:
                             for t in types[arg[parse][:-1]]:
                                 if not isinstance(item,t):
-                                    break
-                            else: continue
-                            break
-                        else:
-                            return True
+                                    return False
                         parse += 1
                         index += 1
                     else:
@@ -463,13 +480,7 @@ class Magic(object):
                             for item in i:
                                 for t in types[arg[parse][:-2]]:
                                     if not isinstance(item,t):
-                                        break
-                                else: continue
-                                break
-                            else: continue
-                            break
-                        else:
-                            return True
+                                        return False
                         parse += 1
                         index += 1
                     else:
@@ -794,10 +805,10 @@ class Magic(object):
             return self.unravel(map(self.ss,args))
 
         elif self.argParse("e,e+",*args):
-            sub = [(eq.lhs(),eq.rhs()) for eq in args[1]]
+            sub = [[eq.lhs() == eq.rhs()] for eq in args[1]]
             temp = args[0]
-            for i in sub:
-                temp = self.sub(temp,[i[0]==i[1]])
+            for item in sub:
+                temp = self.sub(temp, item)
             return temp
 
         elif self.argParse("e+,e+", *args):
@@ -825,11 +836,22 @@ class Magic(object):
                 temp = temp * fun
             return temp
 
-        elif self.argParse("c*,*++", *args):
-            return map(lambda row:S(*list(args[:-1])+[row]), args[-1])
+        elif self.argParse("c*,**", *args):
+            fns = []
+            lsts = []
+            for item in args:
+                if isinstance(item, coll.Callable):
+                    if isinstance(item, Expression):
+                        fns.append(self.Function(item))
+                    else:
+                        fns.append(item)
+                else:
+                    lsts.append(item)
 
-        elif self.argParse("c*,*+", *args):
-            return map(S(*args[:-1]),args[-1])
+            if len(lsts) == 1:
+                return self.multimap(fns, lsts[0])
+            else:
+                return [self.multimap(fns, lst) for lst in lsts]
 
     # proxy functions for common stuff
     def __add__(self,x):
