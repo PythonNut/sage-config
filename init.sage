@@ -909,7 +909,42 @@ class Magic(object):
     def __pos__(self):
         def temp(obj):
             return reduce(operator.add,obj)
-        return temp
+        return self.Function(temp)
+
+    def __lt__ (self, x):
+        def temp(y):
+            return x > y
+        return self.Function(temp)
+
+    def __le__ (self, x):
+        def temp(y):
+            return x >= y
+        return self.Function(temp)
+
+    def __eq__ (self, x):
+        def temp(y):
+            return x == y
+        return self.Function(temp)
+
+    def __ne__ (self, x):
+        def temp(y):
+            return x != y
+        return self.Function(temp)
+
+    def __ge__ (self, x):
+        def temp(y):
+            return x <= y
+        return self.Function(temp)
+
+    def __gt__ (self, x):
+        def temp(y):
+            return x < y
+        return self.Function(temp)
+
+    def __mod__(self, x):
+        def temp(y):
+            return y % x == 0
+        return self.Function(temp)
 
     def __invert__(self):
         return Primes()
