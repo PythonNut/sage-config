@@ -111,11 +111,8 @@ class Magic(object):
         solutions = set()
         for ix, iy in it.product(eq_tx,eq_ty):
             solutions.add(tuple(solve(ix.rhs() == iy.rhs(),y)))
-            solutions = [i[0] if len(i) == 1 else i for i in solutions]
-        if len(solutions) == 1:
-            return solutions[0]
-        else:
-            return solutions
+            solutions =  map(self.unravel, solutions)
+        return self.unravel(solutions)
 
     def sv(self,f,*var,**kwargs):
         if not isinstance(f,list):
@@ -138,10 +135,7 @@ class Magic(object):
         ret = []
         for solution in out:
             solution = [k._sage_() == v._sage_() for k,v in solution.items()]
-            if len(solution) == 1:
-                ret.append(solution[0])
-            else:
-                ret.append(solution)
+            ret.append(self.unravel(solution))
         return ret
 
     def unique(self, lst):
@@ -848,10 +842,7 @@ class Magic(object):
                 else:
                     lsts.append(item)
 
-            if len(lsts) == 1:
-                return self.multimap(fns, lsts[0])
-            else:
-                return [self.multimap(fns, lst) for lst in lsts]
+            return self.unravel([self.multimap(fns, lst) for lst in lsts])
 
     # proxy functions for common stuff
     def __add__(self,x):
