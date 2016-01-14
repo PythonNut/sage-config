@@ -146,7 +146,10 @@ class Magic(object):
 
     def unique(self, lst):
         return list(coll.OrderedDict.fromkeys(lst))
-    
+
+    def chunks(self, lst, n):
+        return zip(*[iter(lst)]*n)
+
     # Wrappers for SymPy functionality
     class SymPy(object):
         # convert expression to SymPy
@@ -880,6 +883,11 @@ class Magic(object):
             return factor(x)
         elif self.argParse("f",x):
             return Rational(x)
+
+    def __pos__(self):
+        def temp(obj):
+            return reduce(operator.add,obj)
+        return temp
 
     def __invert__(self):
         return Primes()
