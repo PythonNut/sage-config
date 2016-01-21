@@ -24,7 +24,9 @@ sage: S[sqrt(x) + x^2](9)
 # Convenient access to numpy, sympy, scipy, mpl, etc.
 sage: S.norm(S.r_[1:10])
 16.881943016134134
-
+# Syntax-free lambdas
+sage: (S^2 + S/2)(8)
+68
 ```
 
 For the gory details, please consult [the wiki](https://github.com/PythonNut/sage-config/wiki).

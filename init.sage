@@ -73,6 +73,48 @@ def pp(x,q=True):
     except: print x
     if q: return x
 
+class MetaLambdaBuilder(type):
+    import operator
+
+    def __init__(self, *args, **kw):
+        super(MetaLambdaBuilder, self).__init__(*args, **kw)
+        attr = '__{}__'
+
+        for op in (x for x in dir(operator) if not x.startswith('__')):
+            oper = getattr(operator, op)
+
+            def func(self, n, oper=oper):
+                def temp(x):
+                    try:
+                        return oper(self.func(x), n)
+                    except AttributeError:
+                        return oper(x, n)
+                return LambdaBuilder(temp)
+
+            def rfunc(self, n, oper=oper):
+                def temp(x):
+                    try:
+                        return oper(n, self.func(x))
+                    except AttributeError:
+                        return oper(n, x)
+                return LambdaBuilder(temp)
+
+            setattr(self, attr.format(op), func)
+            setattr(self, attr.format('r' + op), rfunc)
+
+class LambdaBuilder():
+    __metaclass__ = MetaLambdaBuilder
+    def __init__(self, func):
+        self.func = func
+
+    def __call__(self, arg):
+        out = self
+        while True:
+            try: out = out.func(arg)
+            except: break
+        return out
+
+# Now play with the function f
 class Magic(object):
     """
     This is the magic SAGE class. It contains lots of functionality
@@ -80,6 +122,7 @@ class Magic(object):
      - SymPy
      - LaTeX
     """
+    __metaclass__ = MetaLambdaBuilder
 
     class my_RealDistribution(RealDistribution):
         def __call__(self, x1, x2 = float("-inf")):
@@ -847,97 +890,9 @@ class Magic(object):
 
             return self.unravel([self.multimap(fns, lst) for lst in lsts])
 
-    # proxy functions for common stuff
-    def __add__(self,x):
-        if self.argParse("i",x):
-            return xrange(x)
-        elif self.argParse("l",x):
-            return max(x)
-        elif self.argParse("s",x):
-            out = []
-            for i in x.split(","):
-                if self.re.match("^\w+$",i) and i not in dir():
-                    out.append(var(i))
-                elif self.re.match("^\w+\[.*\]$",i) and i[:i.index("[")] not in dir():
-                    v=var(i[:i.index("[")])
-                    mods = i[i.index("[")+1:i.index("]")]
-                    modmap = {
-                        "+" : var("x") > 0,
-                        "-" : var("x") < 0,
-                        "*" : var("x") != 0,
-                        "z" : "integer",
-                        "r" : "real",
-                        "c" : "complex",
-                        "q" : "rational"
-                    }
-                    for i in mods:
-                        i=i.lower()
-                        if modmap[i].__class__ == Expression:
-                            modmap[i](x=v).assume()
-                        else:
-                            assume(v,modmap[i])
-                    out.append(v)
-                elif self.re.match("^\w+\{.*\}$",i) and i[:i.index("{")] not in dir():
-                    v=var(i[:i.index("{")])
-                    for i in i[i.index("{")+1:i.index("}")].split(","):
-                        sage_eval(i,locals={str(v):v}).assume()
-                    out.append(v)
-                elif self.re.match("^\w+\(\)$",i) and i[:-2] not in dir():
-                    out.append(function(i[:-2]))
-                elif i in dir():
-                    out.append(eval(i))
-            return out
-
-    def __sub__(self,x):
-        if self.argParse("i",x):
-            return xrange(1,x)
-        elif self.argParse("l",x):
-            return min(x)
-
-    def __mul__(self,x):
-        if self.argParse("i",x):
-            return factor(x)
-        elif self.argParse("f",x):
-            return Rational(x)
-
     def __pos__(self):
         def temp(obj):
             return reduce(operator.add,obj)
-        return self.Function(temp)
-
-    def __lt__ (self, x):
-        def temp(y):
-            return x > y
-        return self.Function(temp)
-
-    def __le__ (self, x):
-        def temp(y):
-            return x >= y
-        return self.Function(temp)
-
-    def __eq__ (self, x):
-        def temp(y):
-            return x == y
-        return self.Function(temp)
-
-    def __ne__ (self, x):
-        def temp(y):
-            return x != y
-        return self.Function(temp)
-
-    def __ge__ (self, x):
-        def temp(y):
-            return x <= y
-        return self.Function(temp)
-
-    def __gt__ (self, x):
-        def temp(y):
-            return x < y
-        return self.Function(temp)
-
-    def __mod__(self, x):
-        def temp(y):
-            return y % x == 0
         return self.Function(temp)
 
     def __invert__(self):
