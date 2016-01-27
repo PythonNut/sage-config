@@ -211,6 +211,11 @@ class Magic(object):
 
         return res
 
+    def iqr(self, data):
+        q3 = numpy.percentile(data, 75, interpolation='higher')
+        q1 = numpy.percentile(data, 25, interpolation='lower')
+        return q3 - q1
+
     # Wrappers for SymPy functionality
     class SymPy(object):
         # convert expression to SymPy
