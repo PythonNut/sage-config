@@ -134,6 +134,8 @@ class Magic(object):
             return numpy.linalg.norm(x1)
 
         def __getitem__(self, x1):
+            if x1 > 1:
+                return abs(self[(1 - x1/100)/2])
             return self.cum_distribution_function_inv(x1)
 
     norm = my_RealDistribution("gaussian", 1)
