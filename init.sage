@@ -870,18 +870,19 @@ class Magic(object):
             return vector(args[0])
 
         elif self.argParse("e+", *args):
+            # Detect: [var == expr, ...]
+            variables = set()
             for item in args[0]:
                 if item.is_relational():
                     if not item.lhs().is_symbol():
                         break
+                    variables.add(item.lhs())
                 else: break
             else:
-                return self.unravel(map(lambda exp: exp.rhs(), args[0]))
+                if len(variables) == 1:
+                    return self.unravel(map(self.rhs, args[0]))
 
             return self.unravel(map(self.ss,args[0]))
-
-        elif len(args) == 1 and str(type(args[0])) == "<type 'function'>":
-            return self.Function(args[0])
 
         elif self.argParse("c*", *args):
             temp = self.Function(args[0])
