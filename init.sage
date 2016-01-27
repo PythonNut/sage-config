@@ -216,6 +216,9 @@ class Magic(object):
         q1 = numpy.percentile(data, 25, interpolation='lower')
         return q3 - q1
 
+    def lhs(self, expr): return expr.lhs()
+    def rhs(self, expr): return expr.rhs()
+
     # Wrappers for SymPy functionality
     class SymPy(object):
         # convert expression to SymPy
