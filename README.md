@@ -3,7 +3,7 @@ sage-config
 
 My SAGEmath configuration, in which I introduce the object `S` and all of its superpowers.
 
-This code is here for a single purpose: to help me solve simple technical problem faster. I'm trying to determine how much DWIM is too much, how much type-instability and ambiguity is too much? But rather than talking, let me demonstrate.
+This code is here for a single purpose: to help me solve simple technical problem faster. How much DWIM is too much? How much type-instability and ambiguity is too much? Do you like puns? `S` contains many. But rather than talking, let me demonstrate.
 
 ```python
 # Split a string into pairs, merge the pairs, cast to int, and discard below 50
