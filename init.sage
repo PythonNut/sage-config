@@ -124,21 +124,58 @@ class Magic(object):
     """
     __metaclass__ = MetaLambdaBuilder
 
-    class my_RealDistribution(RealDistribution):
-        def __call__(self, x1, x2 = float("-inf")):
+    class ContinuousDistribution(object):
+        import inspect
+
+        def __init__(self, dist, fallback = None):
+            self.dist = dist
+            self.fallback = fallback
+            argspec = self.inspect.getargspec(self._parse_args)
+            self.order = len(argspec.args) - len(argspec.defaults)
+
+        def __getattr__(self, name):
+            return getattr(self.dist, name)
+
+        def __call__(self, *args):
             try:
-                a1 = self.cum_distribution_function(x1)
-                a2 = self.cum_distribution_function(x2)
-                return abs(a1 - a2)
-            except: pass
-            return numpy.linalg.norm(x1)
+                # Ensure that all args can be cast to a float
+                # Otherwise, raise Exception and switch to fallback
+                map(float, args)
+
+                if len(args) == self.order:
+                    base, arg = args[:-1], args[-1]
+                    return self.cdf(arg, *base)
+                elif len(args) == self.order + 1:
+                    base, arg1, arg2 = args[:-2], args[-2], args[-1]
+                    a1 = self.cdf(arg1, *base)
+                    a2 = self.cdf(arg2, *base)
+                    return abs(a1 - a2)
+                else:
+                    msg = "Expected {} or {} args, got {}."
+                    raise TypeError(msg.format(
+                        self.order,
+                        self.order + 1,
+                        len(args)
+                    ))
+            except TypeError:
+                if not self.fallback:
+                    raise
+                return self.fallback(*args)
 
         def __getitem__(self, x1):
-            if x1 > 1:
-                return abs(self[(1 - x1/100)/2])
-            return self.cum_distribution_function_inv(x1)
+            if not isinstance(x1, coll.Iterable):
+                x1 = (x1,)
 
-    norm = my_RealDistribution("gaussian", 1)
+            if len(x1) == self.order:
+                base, arg = x1[:-1], x1[-1]
+                if arg > 1:
+                    arglist = list(base)
+                    arglist.append((1 - arg/100)/2)
+                    return abs(self[arglist])
+                return self.ppf(arg, *base)
+            else:
+                msg = "Expected {} args, got {}."
+                raise TypeError(msg.format(self.order, len(x1)))
 
     def inverse(self, f, x=None):
         try:
@@ -422,10 +459,7 @@ class Magic(object):
         _try_import(self.mro,"numpy")
         self.mro.append(numpy.linalg)
         _try_import(self.mro,"scipy")
-        try:
-            import scipy.stats
-            self.mro.append(scipy.stats)
-        except: pass
+        # scipy.stats
         _try_import(self.mro,"matplotlib")
         _try_import(self.mro,"math")
         _try_import(self.mro,"cmath")
@@ -442,6 +476,22 @@ class Magic(object):
         _try_import(self.mro,"sage.plot.colors")
         _try_import(self.mro,"collections")
         _try_import(self.mro,"random")
+
+        import scipy.stats
+        stat_dists = scipy.stats._continuous_distns.__dict__.values()
+        for name, obj in scipy.stats.__dict__.items():
+            if not hasattr(obj, "cdf"): continue
+            if not hasattr(obj, "_parse_args"): continue
+            if obj in stat_dists:
+                old_attr = None
+                try:
+                    old_attr = getattr(self, name)
+                except AttributeError:
+                    pass
+                dist_wrapper = self.ContinuousDistribution(obj, old_attr)
+                self.__dict__[name] = dist_wrapper
+
+        self.mro.insert(2, scipy.stats)
 
         for unit_name in units.trait_names():
             self.mro.append(getattr(units,unit_name))
