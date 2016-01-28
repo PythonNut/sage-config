@@ -177,6 +177,24 @@ class Magic(object):
                 msg = "Expected {} args, got {}."
                 raise TypeError(msg.format(self.order, len(x1)))
 
+    class IterOperator(object):
+        def __init__(self, func, *args, **kwargs):
+            self.func, self.args, self.kwargs = func, args, kwargs
+        def __call__(self, *args):
+            return self.func(*list(args)+list(self.args), **self.kwargs)
+
+    class IterSortOperator(IterOperator):
+        def __call__(self, *args, **kwargs):
+            if len(args) == 1 and isinstance(args[0], coll.Callable):
+                return self.__class__.__bases__[0](sorted, key=args[0])
+            elif isinstance(args[0], numpy.ndarray):
+                return numpy.sort(*args, **kwargs)
+            else:
+                return super(self.__class__, self).__call__(*args)
+
+    sort = IterSortOperator(sorted)
+    reverse = IterOperator(lambda x: list(reversed(x)))
+
     def inverse(self, f, x=None):
         try:
             if not x:
@@ -231,22 +249,27 @@ class Magic(object):
 
     def multimap(self, fns, lst):
         dummy = lst[0]
-        filter_p = []
+        types = []
 
         for f in fns:
+            if isinstance(f, self.IterOperator):
+                types.append("reorder")
+                continue
             temp = f(dummy)
             if isinstance(temp, bool):
-                filter_p.append(True)
+                types.append("predicate")
             else:
-                filter_p.append(False)
+                types.append("map")
                 dummy = temp
 
         res = lst
-        for f, is_filter in zip(fns, filter_p):
-            if is_filter:
+        for f, t in zip(fns, types):
+            if t == "predicate":
                 res = filter(f, res)
-            else:
+            elif t == "map":
                 res = map(f, res)
+            elif t == "reorder":
+                res = f(res)
 
         return res
 
@@ -257,6 +280,9 @@ class Magic(object):
 
     def lhs(self, expr): return expr.lhs()
     def rhs(self, expr): return expr.rhs()
+
+    def pm(self, base, delta):
+        return base + delta, base - delta
 
     # Wrappers for SymPy functionality
     class SymPy(object):
