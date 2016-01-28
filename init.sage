@@ -876,6 +876,19 @@ class Magic(object):
                 pass
         raise AttributeError("'Magic' object has no attribute '%s'"%x)
 
+    def source(self, name):
+        for lib in self.mro:
+            try:
+                if isinstance(name, str):
+                    getattr(lib, name)
+                else:
+                    if name not in lib.__dict__.values():
+                        raise AttributeError()
+                return lib
+            except AttributeError:
+                pass
+        raise AttributeError("'Magic' object has no attribute '%s'"%name)
+
     # the automagic function!
     def __call__(self,*args,**kwargs):
         if self.argParse("f",*args):
