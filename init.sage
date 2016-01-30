@@ -248,28 +248,18 @@ class Magic(object):
         return zip(*[iter(lst)]*n)
 
     def multimap(self, fns, lst):
-        dummy = lst[0]
-        types = []
-
+        res = lst
         for f in fns:
             if isinstance(f, self.IterOperator):
-                types.append("reorder")
-                continue
-            temp = f(dummy)
-            if isinstance(temp, bool):
-                types.append("predicate")
-            else:
-                types.append("map")
-                dummy = temp
-
-        res = lst
-        for f, t in zip(fns, types):
-            if t == "predicate":
-                res = filter(f, res)
-            elif t == "map":
-                res = map(f, res)
-            elif t == "reorder":
                 res = f(res)
+                continue
+            try:
+                temp = map(f, res)
+                if all(isinstance(x, bool) for x in temp):
+                    temp = filter(f, res)
+            except TypeError:
+                temp = f(res)
+            res = temp
 
         return res
 
