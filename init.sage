@@ -632,6 +632,19 @@ class Magic(object):
 
     # get all possible alternate forms
     def forms(self,x, exp=True, fac=True, **kwargs):
+        import itertools
+        try:
+            if x.is_relational():
+                res = []
+                op = x.operator()
+                lhs = self.forms(x.lhs(), exp, fac, **kwargs)
+                rhs = self.forms(x.rhs(), exp, fac, **kwargs)
+                for l, r in itertools.product(lhs, rhs):
+                    res.append(op(l, r))
+                return res
+        except AttributeError:
+            pass
+
         fast = True if "fast" not in kwargs else kwargs["fast"]
 
         try:
