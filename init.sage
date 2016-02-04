@@ -239,7 +239,18 @@ class Magic(object):
         for solution in out:
             solution = [k._sage_() == v._sage_() for k,v in solution.items()]
             ret.append(self.unravel(solution))
-        return ret
+
+        # Automatically simplify resulting expression
+        variables = set()
+        for item in ret:
+            if not item.lhs().is_symbol():
+                break
+            variables.add(item.lhs())
+        else:
+            if len(variables) == 1:
+                return self.unravel(map(self.rhs, ret))
+
+        return self.unravel(ret)
 
     def unique(self, lst):
         return list(coll.OrderedDict.fromkeys(lst))
@@ -967,18 +978,6 @@ class Magic(object):
             return vector(args[0])
 
         elif self.argParse("e+", *args):
-            # Detect: [var == expr, ...]
-            variables = set()
-            for item in args[0]:
-                if item.is_relational():
-                    if not item.lhs().is_symbol():
-                        break
-                    variables.add(item.lhs())
-                else: break
-            else:
-                if len(variables) == 1:
-                    return self.unravel(map(self.rhs, args[0]))
-
             return self.unravel(map(self.ss,args[0]))
 
         elif self.argParse("c*", *args):
