@@ -124,7 +124,7 @@ class Magic(object):
     """
     __metaclass__ = MetaLambdaBuilder
 
-    class ContinuousDistribution(object):
+    class StatDistribution(object):
         import inspect
 
         def __init__(self, dist, fallback = None):
@@ -140,7 +140,7 @@ class Magic(object):
             try:
                 # Ensure that all args can be cast to a float
                 # Otherwise, raise Exception and switch to fallback
-                map(float, args)
+                args = map(float, args)
 
                 if len(args) == self.order:
                     base, arg = args[:-1], args[-1]
@@ -505,7 +505,9 @@ class Magic(object):
         _try_import(self.mro,"random")
 
         import scipy.stats
-        stat_dists = scipy.stats._continuous_distns.__dict__.values()
+        stat_dists = []
+        stat_dists += scipy.stats._continuous_distns.__dict__.values()
+        stat_dists += scipy.stats._discrete_distns.__dict__.values()
         for name, obj in scipy.stats.__dict__.items():
             if not hasattr(obj, "cdf"): continue
             if not hasattr(obj, "_parse_args"): continue
@@ -515,7 +517,7 @@ class Magic(object):
                     old_attr = getattr(self, name)
                 except AttributeError:
                     pass
-                dist_wrapper = self.ContinuousDistribution(obj, old_attr)
+                dist_wrapper = self.StatDistribution(obj, old_attr)
                 self.__dict__[name] = dist_wrapper
 
         self.mro.insert(2, scipy.stats)
