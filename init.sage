@@ -140,6 +140,12 @@ class Magic(object):
             try:
                 # Ensure that all args can be cast to a float
                 # Otherwise, raise Exception and switch to fallback
+                if len(args) == 1 and isinstance(args[0], RealSet):
+                    area = 0
+                    for item in args[0]:
+                        area += self.__call__(item.lower(), item.upper())
+                    return area
+
                 args = map(float, args)
 
                 if len(args) == self.order:
@@ -284,7 +290,7 @@ class Magic(object):
 
     def pm(self, base, delta = 0):
         if delta == 0: delta, base = base, 0
-        return base - delta, base + delta
+        return RealSet(base - delta, base + delta)
 
     # Wrappers for SymPy functionality
     class SymPy(object):
