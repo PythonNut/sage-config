@@ -282,8 +282,9 @@ class Magic(object):
     def lhs(self, expr): return expr.lhs()
     def rhs(self, expr): return expr.rhs()
 
-    def pm(self, base, delta):
-        return base + delta, base - delta
+    def pm(self, base, delta = 0):
+        if delta == 0: delta, base = base, 0
+        return base - delta, base + delta
 
     # Wrappers for SymPy functionality
     class SymPy(object):
