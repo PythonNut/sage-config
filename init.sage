@@ -529,8 +529,10 @@ class Magic(object):
 
         self.mro.insert(2, scipy.stats)
 
-        for unit_name in units.trait_names():
-            self.mro.append(getattr(units,unit_name))
+        for unit_type in units.__dict__["_Units__data"].keys():
+            attr = getattr(units, unit_type)
+            if isinstance(attr, sage.symbolic.units.Units):
+                self.mro.append(attr)
 
     def __str__(self):
         return "<SAGE magic stuff.>"
