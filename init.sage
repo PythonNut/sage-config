@@ -1023,3 +1023,4 @@ S = Magic()
 
 %rehashx
 %autocall 1
+%colors Linux
