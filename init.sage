@@ -681,12 +681,16 @@ class Magic(object):
             forms = [x]
             simptype = [
                 "simplify",
-                "simplify_full",
-                "simplify_rational",
-                "canonicalize_radical",
-                "simplify_log",
-                "simplify_trig",
+                "simplify_exp",
                 "simplify_factorial",
+                "simplify_full",
+                "simplify_hypergeometric",
+                "simplify_log",
+                "canonicalize_radical",
+                "simplify_rational",
+                "simplify_real",
+                "simplify_rectform",
+                "simplify_trig",
             ]
 
             forms = list(forms)
