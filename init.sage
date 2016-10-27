@@ -332,6 +332,11 @@ class Magic(object):
         def pp(self, x):
             return sympy.pprint(self.cv(x), use_unicode=True)
 
+        # numeric simplification
+        @classmethod
+        def nsimp(self, x):
+            return sympy.nsimplify(self.cv(x))._sage_()
+
     # handles LaTeX conversion
     class LaTeX(object):
         """What will eventually become a flexible LaTeX transcription subsystem"""
@@ -646,8 +651,11 @@ class Magic(object):
         score = len(out)
 
         try:
-            if str(x) == str(factor(x)):
-                score = score * 0.7
+            try:
+                if str(x) == str(factor(x)):
+                    score = score * 0.7
+            except TypeError:
+                pass
         except NotImplementedError: pass
 
         return score
@@ -717,46 +725,21 @@ class Magic(object):
                         forms.append(self.SymPy.simp(x))
                     except: pass
 
-                forms = list(set(forms))
 
-            forms = sorted(forms, key = self.__process)
-            return forms
-        except AttributeError:
-            out = [x]
+        except (AttributeError, TypeError):
+            forms = [x]
 
-            # int
             try:
-                if exp: out.append(factor(x))
-                if fac: out.append(Rational(x))
-                return out
-            except TypeError:
-                pass
-                
-            # float
-            try:
-                if fac: out.append(Rational(x))
-                if fac: out.append(factor(Rational(x)))
-                return out
+                forms.append(self.SymPy.nsimp(x))
+                if exp: forms.append(factor(x))
+                if fac: forms.append(Rational(x))
+                if fac: forms.append(factor(Rational(x)))
             except TypeError:
                 pass
 
-            # Desperate. Any and all type castings.
-            classes = [
-                int,
-                str,
-                float,
-                list,
-                tuple,
-                Matrix,
-                factor,
-                Rational,
-                RealNumber,
-                RealLiteral
-            ]
-            for cls in classes:
-                try: out.append(cls(x))
-                except: pass
-            return out
+        forms = list(set(forms))
+        forms = sorted(forms, key = self.__process)
+        return forms
 
     # get simplest form for Expression
     def ss(self, x):
@@ -943,10 +926,10 @@ class Magic(object):
     # the automagic function!
     def __call__(self,*args,**kwargs):
         if self.argParse("f",*args):
-            return Rational(args[0])
+            return S.ss(args[0])
 
         elif self.argParse("i",*args):
-            return factor(args[0])
+            return S.ss(args[0])
 
         elif self.argParse("s",*args):
             return self.str(args[0],**kwargs)
