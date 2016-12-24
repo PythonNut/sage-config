@@ -85,10 +85,10 @@ class MetaLambdaBuilder(type):
 
             def func(self, n, oper=oper):
                 def temp(x):
-                    try:
-                        return oper(self.func(x), n)
-                    except AttributeError:
-                        return oper(x, n)
+                    # try:
+                    return oper(self.func(x), n)
+                    # except AttributeError:
+                        # return oper(x, n)
                 return LambdaBuilder(temp)
 
             def rfunc(self, n, oper=oper):
@@ -110,8 +110,7 @@ class LambdaBuilder():
     def __call__(self, arg):
         out = self
         while True:
-            try: out = out.func(arg)
-            except: break
+             out = out.func(arg)
         return out
 
 # Now play with the function f
@@ -1009,5 +1008,4 @@ class Magic(object):
 S = Magic()
 
 %rehashx
-%autocall 1
 %colors Linux
