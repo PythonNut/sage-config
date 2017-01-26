@@ -680,7 +680,6 @@ class Magic(object):
             forms = [x]
             simptype = [
                 "simplify",
-                "simplify_exp",
                 "simplify_factorial",
                 "simplify_full",
                 "simplify_hypergeometric",
