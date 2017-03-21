@@ -691,40 +691,40 @@ class Magic(object):
                 "simplify_trig",
             ]
 
-            forms = list(forms)
-            oldforms = [None]
-            while list(set(oldforms)) != forms:
+            forms = set(forms)
+            oldforms = set()
+            while oldforms != forms:
                 oldforms = forms
-                for i in forms[:len(forms)]:
+                for i in list(forms):
                     if exp:
-                        forms.append(expand(i))
+                        forms.add(expand(i))
                         if fast:
                             try:
-                                forms.append(self.SymPy.exp(i,basic=True))
-                                forms.append(self.SymPy.exp(i,basic=False))
-                                forms.append(self.SymPy.exp(i,trig=True))
+                                forms.add(self.SymPy.exp(i,basic=True))
+                                forms.add(self.SymPy.exp(i,basic=False))
+                                forms.add(self.SymPy.exp(i,trig=True))
                             except: pass
                     if fac:
-                        forms.append(factor(i))
+                        forms.add(factor(i))
                         if fast:
-                            try: forms.append(self.SymPy.fac(i))
+                            try: forms.add(self.SymPy.fac(i))
                             except: pass
 
                     try:
                         if len(i.variables()) == 1:
-                           forms.append(i.partial_fraction(i.variables()[0]))
+                           forms.add(i.partial_fraction(i.variables()[0]))
                     except: pass
 
-                    try: forms.append(i.trig_reduce())
+                    try: forms.add(i.trig_reduce())
                     except: pass
 
                     try:
                         for s in simptype:
-                            forms.append(getattr(x,s)())
+                            forms.add(getattr(x,s)())
                     except: pass
 
                     try:
-                        forms.append(self.SymPy.simp(x))
+                        forms.add(self.SymPy.simp(x))
                     except: pass
 
 
@@ -739,7 +739,7 @@ class Magic(object):
             except TypeError:
                 pass
 
-        forms = list(set(forms))
+        forms = list(forms)
         forms = sorted(forms, key = self.__process)
         return forms
 
