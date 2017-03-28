@@ -85,10 +85,10 @@ class MetaLambdaBuilder(type):
 
             def func(self, n, oper=oper):
                 def temp(x):
-                    # try:
-                    return oper(self.func(x), n)
-                    # except AttributeError:
-                        # return oper(x, n)
+                    try:
+                        return oper(self.func(x), n)
+                    except AttributeError:
+                        return oper(x, n)
                 return LambdaBuilder(temp)
 
             def rfunc(self, n, oper=oper):
@@ -110,7 +110,10 @@ class LambdaBuilder():
     def __call__(self, arg):
         out = self
         while True:
-             out = out.func(arg)
+            try:
+                out = out.func(arg)
+            except:
+                break
         return out
 
 # Now play with the function f
