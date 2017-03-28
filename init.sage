@@ -80,6 +80,22 @@ class MetaLambdaBuilder(type):
         super(MetaLambdaBuilder, self).__init__(*args, **kw)
         attr = '__{}__'
 
+        sage_funcs = filter(lambda x:"sage.functions" in str(type(eval(x))), globals().keys())
+        sage_funcs.extend(['sqrt']) # I'm not sure what's special about sqrt.
+        for f in sage_funcs:
+            def funfact(f):
+                def func(self, *a, **kw):
+                    def temp(x):
+                        oper=eval(f)
+                        try:
+                            return oper(self.func(x))
+                        except AttributeError:
+                            return oper(x)
+                    return LambdaBuilder(temp)
+                return func
+
+            setattr(self, f, funfact(f))
+
         for op in (x for x in dir(operator) if not x.startswith('__')):
             oper = getattr(operator, op)
 
