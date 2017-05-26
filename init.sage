@@ -1020,7 +1020,7 @@ class Magic(object):
             return self.unravel(map(list,args))
 
         elif self.argParse("n*",*args):
-            return np.array(args)
+            return vector(args)
 
         elif self.argParse("e,n,n",*args):
             v, e = args[0].variables()[0], args[0]
@@ -1051,8 +1051,7 @@ class Magic(object):
             return out
 
         elif self.argParse("*++",*args):
-            return self.array(self.unravel(args[0]))
-            return Matrix(self.enravel(self.unravel(args[0])))
+            return matrix(self.enravel(self.unravel(args[0])))
 
         elif self.argParse("n+", *args):
             return vector(args[0])
