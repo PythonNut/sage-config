@@ -564,6 +564,7 @@ class Magic(object):
     # parse arguments according to pattern
     @staticmethod
     def argParse(arg,*args):
+        import inspect
         types = {
             "n" : [int,
                    float,
@@ -576,6 +577,8 @@ class Magic(object):
                    sage.rings.real_mpfr.RealLiteral,
                    sage.rings.real_mpfr.RealNumber],
 
+            "m" : [sage.matrix.matrix.is_Matrix],
+            "v" : [sage.structure.element.Vector],
             "i" : [int, Integer],
             "s" : [coll.Iterable],
             "h" : [coll.Hashable],
@@ -595,13 +598,18 @@ class Magic(object):
         if arg == args == []:
             return True
 
+        def is_thing(it, thing):
+            if inspect.isclass(thing):
+                return isinstance(it, thing)
+            return thing(it)
+
         while parse < len(arg) or index < len(args):
             if index >= len(args) or parse >= len(arg):
                 return False
 
             if arg[parse] in types:
                 for t in types[arg[parse]]:
-                    if isinstance(args[index],t):
+                    if is_thing(args[index],t):
                         parse += 1
                         index += 1
                         break
@@ -615,7 +623,7 @@ class Magic(object):
                         if index >= len(args):
                             break
                         for t in types[arg[parse][:-1]]:
-                            if isinstance(args[index],t):
+                            if is_thing(args[index],t):
                                 index += 1
                                 break
                         else:
@@ -626,7 +634,7 @@ class Magic(object):
                     if isinstance(args[index],coll.Iterable):
                         for item in args[index]:
                             for t in types[arg[parse][:-1]]:
-                                if not isinstance(item,t):
+                                if not is_thing(item,t):
                                     return False
                         parse += 1
                         index += 1
@@ -636,11 +644,11 @@ class Magic(object):
                 if arg[parse][-2:] == "++":
                     if isinstance(args[index],coll.Iterable):
                         for i in args[index]:
-                            if not isinstance(i,coll.Iterable):
+                            if not is_thing(i,coll.Iterable):
                                 return False
                             for item in i:
                                 for t in types[arg[parse][:-2]]:
-                                    if not isinstance(item,t):
+                                    if not is_thing(item,t):
                                         return False
                         parse += 1
                         index += 1
@@ -651,9 +659,11 @@ class Magic(object):
     # unravels single length lists
     @classmethod
     def unravel(self,x):
-        if isinstance(x,coll.Iterable) and len(x) == 1:
-            return self.unravel(x[0])
-        else: return x
+        try:
+            if isinstance(x,coll.Iterable) and len(x) == 1:
+                return self.unravel(x[0])
+        except: pass
+        return x
 
     @classmethod
     def enravel(self,x):
@@ -1029,6 +1039,10 @@ class Magic(object):
             for item in sub:
                 temp = self.sub(temp, item)
             return temp
+
+        elif self.argParse("m*", *args) or self.argParse("v*", *args):
+            return self.unravel([m.apply_map(lambda x: S.ss(x, **kwargs))
+                                 for m in args])
 
         elif self.argParse("e+,e+", *args):
             out = []
