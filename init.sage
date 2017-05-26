@@ -679,92 +679,143 @@ class Magic(object):
         return score
 
     # get all possible alternate forms
-    def forms(self,x, exp=True, fac=True, **kwargs):
+    def forms(self, x, **kwargs):
+        import copy
         import itertools
+        import sys
         try:
             if x.is_relational():
                 res = []
                 op = x.operator()
-                lhs = self.forms(x.lhs(), exp, fac, **kwargs)
-                rhs = self.forms(x.rhs(), exp, fac, **kwargs)
+                lhs = self.forms(x.lhs(), **kwargs)
+                rhs = self.forms(x.rhs(), **kwargs)
                 for l, r in itertools.product(lhs, rhs):
                     res.append(op(l, r))
                 return res
         except AttributeError:
             pass
 
-        fast = True if "fast" not in kwargs else kwargs["fast"]
+        fast = False if "fast" not in kwargs else kwargs["fast"]
+        return_paths = False if "path" not in kwargs else kwargs["path"]
+        limit = (10 if fast else 20) if "limit" not in kwargs else kwargs["limit"]
+        progress = False if "progress" not in kwargs else kwargs["progress"]
 
-        try:
-            forms = [x]
-            simptype = [
-                "simplify",
-                "simplify_factorial",
-                "simplify_full",
-                "simplify_hypergeometric",
-                "simplify_log",
-                "canonicalize_radical",
-                "simplify_rational",
-                "simplify_real",
-                "simplify_rectform",
-                "simplify_trig",
-            ]
+        # try:
+        simplifiers = {
+            'simp'           : lambda x: [x.simplify()],
+            'factorial'      : lambda x: [x.simplify_factorial()],
+            'full'           : lambda x: [x.simplify_full()],
+            'hypergeometric' : lambda x: [x.simplify_hypergeometric()],
+            'log'            : lambda x: [x.simplify_log()],
+            'radical'        : lambda x: [x.canonicalize_radical()],
+            'rational'       : lambda x: [x.simplify_rational()],
+            'rectform'       : lambda x: [x.simplify_rectform()],
+            'trig_simp'      : lambda x: [x.simplify_trig()],
+            'trig_reduce'    : lambda x: [x.trig_reduce()],
+            'expand'         : lambda x: [expand(x)],
+            'factor'         : lambda x: [factor(x)]
+        }
 
-            forms = set(forms)
-            oldforms = set()
-            while oldforms != forms:
-                oldforms = forms
-                for i in list(forms):
-                    if exp:
-                        forms.add(expand(i))
-                        if fast:
-                            try:
-                                forms.add(self.SymPy.exp(i,basic=True))
-                                forms.add(self.SymPy.exp(i,basic=False))
-                                forms.add(self.SymPy.exp(i,trig=True))
-                            except: pass
-                    if fac:
-                        forms.add(factor(i))
-                        if fast:
-                            try: forms.add(self.SymPy.fac(i))
-                            except: pass
+        def sympy_contains_decimal(x):
+            if x.args:
+                return any(map(sympy_contains_decimal,x.args))
+            return x.is_real and not x.is_rational
+
+        def try_sympy_expand(x):
+            ret = []
+            for result in [
+                    self.SymPy.exp(x,basic=True),
+                    self.SymPy.exp(x,basic=False),
+                    self.SymPy.exp(x,trig=True)]:
+                if (sympy_contains_decimal(x) or
+                    not sympy_contains_decimal(result)):
+                    ret.append(result)
+
+            return [ret]
+
+        def try_sympy_factor(x):
+            result = self.SymPy.fac(x)
+            if (not sympy_contains_decimal(x) and
+                sympy_contains_decimal(result)):
+                return []
+            return [result]
+
+        def try_sympy_simplify(x):
+            result = self.SymPy.simp(x)
+            if (not sympy_contains_decimal(x) and
+                sympy_contains_decimal(result)):
+                return []
+            return [result]
+
+        def try_partial_fractions(x):
+            if len(x.variables()) == 1:
+                return [x.partial_fraction(x.variables()[0])]
+            return []
+
+        def try_maxima_exponentialize(x):
+            return [sageobj(x._maxima_().exponentialize())]
+
+        def try_maxima_demoivre(x):
+            return [sageobj(x._maxima_().demoivre())]
+
+        simplifiers['partial_fractions'] = try_partial_fractions
+        simplifiers['maxima_exponentialize'] = try_maxima_exponentialize
+        simplifiers['maxima_demoivre'] = try_maxima_demoivre
+
+        if not fast:
+            simplifiers['sympy_expand'] = try_sympy_expand
+            simplifiers['sympy_factor'] = try_sympy_factor
+            simplifiers['sympy_simplify'] = try_sympy_simplify
+            simplifiers['real'] = lambda x: [x.simplify_real()],
+
+        forms = {x : []}
+        old_forms = {}
+
+        longest_output = -1
+        form_count = 1
+
+        while True:
+            new_forms = {}
+            for form, path in forms.items():
+                for name, simplifier in simplifiers.items():
+                    if progress:
+                        message = '%d %s → %s'%(form_count, ' → '.join(path), name)
+                        print message.ljust(longest_output) + "\r",
+                        longest_output = max(longest_output, len(message))
+                        sys.stdout.flush()
 
                     try:
-                        if len(i.variables()) == 1:
-                           forms.add(i.partial_fraction(i.variables()[0]))
-                    except: pass
+                        for new_form in simplifier(form):
+                            if "." in str(new_form) and '.' not in str(form):
+                                print(form,path,name)
+                            if not (new_form in forms or
+                                    new_form in old_forms or
+                                    new_form in new_forms):
+                                new_forms[new_form] = path + [name]
+                                form_count += 1
+                    except (AttributeError, TypeError) as e:
+                        pass
 
-                    try: forms.add(i.trig_reduce())
-                    except: pass
+            forms.update(new_forms)
+            old_forms.update(forms)
+            forms = new_forms
 
-                    try:
-                        for s in simptype:
-                            forms.add(getattr(x,s)())
-                    except: pass
+            if len(old_forms) > limit:
+                break
 
-                    try:
-                        forms.add(self.SymPy.simp(x))
-                    except: pass
+            if not new_forms: break
 
+        if progress: print " " * longest_output
 
-        except (AttributeError, TypeError):
-            forms = [x]
-
-            try:
-                forms.append(self.SymPy.nsimp(x))
-                if exp: forms.append(factor(x))
-                if fac: forms.append(Rational(x))
-                if fac: forms.append(factor(Rational(x)))
-            except TypeError:
-                pass
-
-        forms = list(forms)
-        forms = sorted(forms, key = self.__process)
+        forms = list(old_forms.items())
+        forms = sorted(forms,key=lambda x: self.__process(x[0]))
+        if not return_paths:
+            forms = map(lambda x: x[0], forms)
         return forms
 
     # get simplest form for Expression
-    def ss(self, x):
-        return self.forms(x)[0]
+    def ss(self, x, **kwargs):
+        return self.forms(x, **kwargs)[0]
 
     def pp(self,x):
         return self.SymPy.pp(x)
@@ -947,10 +998,10 @@ class Magic(object):
     # the automagic function!
     def __call__(self,*args,**kwargs):
         if self.argParse("f",*args):
-            return S.ss(args[0])
+            return S.ss(args[0], **kwargs)
 
         elif self.argParse("i",*args):
-            return S.ss(args[0])
+            return S.ss(args[0], **kwargs)
 
         elif self.argParse("s",*args):
             return self.str(args[0],**kwargs)
@@ -970,7 +1021,7 @@ class Magic(object):
             return S.sub(e,[v == args[2]]) - S.sub(e,[v == args[1]])
 
         elif self.argParse("e*",*args):
-            return self.unravel(map(self.ss,args))
+            return self.unravel(map(lambda x: S.ss(x, **kwargs), args))
 
         elif self.argParse("e,e+",*args):
             sub = [[eq.lhs() == eq.rhs()] for eq in args[1]]
