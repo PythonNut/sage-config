@@ -317,33 +317,86 @@ class Magic(object):
         def cv(self, x):
             return x._sympy_()
 
-        # simplify expression with SymPy
         @classmethod
-        def simp(self, x):
+        def dispatch_relational(self, x, func, **kwargs):
             if x.is_relational():
-                return self.simp(x.lhs()) == self.simp(x.rhs())
-            return sympy.simplify(self.cv(x))._sage_()
+                l = sageobj(func(self.cv(x.lhs()), **kwargs))
+                r = sageobj(func(self.cv(x.rhs()), **kwargs))
+                return l == r
+            return sageobj(func(self.cv(x), **kwargs))
 
-        # expression substitution with SymPy
+        @classmethod
+        def simplify(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.simplify, **kwargs)
+
         @classmethod
         def subs(self, x, fr, to):
             if x.is_relational():
                 return self.subs(x.lhs(),x) == self.subs(x.rhs(),x)
             return self.cv(x).subs(self.cv(fr),self.cv(to))._sage_()
 
-        # expand expression with SymPy
         @classmethod
-        def exp(self, x, **kwargs):
-            if x.is_relational():
-                return self.exp(x.lhs(),**kwargs) == self.exp(x.rhs(),**kwargs)
-            return self.cv(x).expand(**kwargs)._sage_()
+        def expand(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.expand, **kwargs)
 
         # factor expression with SymPy
         @classmethod
-        def fac(self, x):
-            if x.is_relational():
-                return self.fac(x.lhs()) == self.fac(x.rhs())
-            return sympy.factor(self.cv(x))._sage_()
+        def factor(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.factor, **kwargs)
+
+        @classmethod
+        def separatevars(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.separatevars, **kwargs)
+
+        @classmethod
+        def besselsimp(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.besselsimp, **kwargs)
+
+        @classmethod
+        def logcombine(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.logcombine, **kwargs)
+
+        @classmethod
+        def radsimp(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.radsimp, **kwargs)
+
+        @classmethod
+        def collect_sqrt(self, x, **kwargs):
+            from sympy.simplify.radsimp import collect_sqrt
+            return self.dispatch_relational(x, collect_sqrt, **kwargs)
+
+        @classmethod
+        def collect_const(self, x, **kwargs):
+            from sympy.simplify.radsimp import collect_const
+            return self.dispatch_relational(x, collect_const, **kwargs)
+
+        @classmethod
+        def ratsimp(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.ratsimp, **kwargs)
+
+        @classmethod
+        def trigsimp(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.trigsimp, **kwargs)
+
+        @classmethod
+        def powsimp(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.powsimp, **kwargs)
+
+        @classmethod
+        def powdenest(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.powdenest, **kwargs)
+
+        @classmethod
+        def combsimp(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.combsimp, **kwargs)
+
+        @classmethod
+        def sqrtdenest(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.sqrtdenest, **kwargs)
+
+        @classmethod
+        def hyperexpand(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.hyperexpand, **kwargs)
 
         # pretty print using SymPy
         @classmethod
@@ -353,7 +406,7 @@ class Magic(object):
         # numeric simplification
         @classmethod
         def nsimp(self, x):
-            return sympy.nsimplify(self.cv(x))._sage_()
+            return sageobj(sympy.nsimplify(self.cv(x)))
 
     # handles LaTeX conversion
     class LaTeX(object):
@@ -693,6 +746,7 @@ class Magic(object):
         import copy
         import itertools
         import sys
+        import sympy
         try:
             if x.is_relational():
                 res = []
@@ -709,21 +763,37 @@ class Magic(object):
         return_paths = False if "path" not in kwargs else kwargs["path"]
         limit = (10 if fast else 20) if "limit" not in kwargs else kwargs["limit"]
         progress = False if "progress" not in kwargs else kwargs["progress"]
+        ratio = 2.5 if "ratio" not in kwargs else kwargs["ratio"]
 
-        # try:
+        def complexity_score(expr):
+            weights = {
+                "POW" : 1.5,
+                "SIN" : 2,
+                "COS" : 2,
+                "TAN" : 2.5,
+            }
+
+            complexity = sympy.count_ops(expr, visual=True)
+            for name, weight in weights.items():
+                complexity = complexity.subs(sympy.Symbol(name), weight)
+            complexity = complexity.replace(sympy.Symbol, type(sympy.S.One))
+
+            return complexity
+
         simplifiers = {
-            'simp'           : lambda x: [x.simplify()],
-            'factorial'      : lambda x: [x.simplify_factorial()],
-            'full'           : lambda x: [x.simplify_full()],
-            'hypergeometric' : lambda x: [x.simplify_hypergeometric()],
-            'log'            : lambda x: [x.simplify_log()],
-            'radical'        : lambda x: [x.canonicalize_radical()],
-            'rational'       : lambda x: [x.simplify_rational()],
-            'rectform'       : lambda x: [x.simplify_rectform()],
-            'trig_simp'      : lambda x: [x.simplify_trig()],
-            'trig_reduce'    : lambda x: [x.trig_reduce()],
-            'expand'         : lambda x: [expand(x)],
-            'factor'         : lambda x: [factor(x)]
+            'simp'        : lambda x: [x.simplify()],
+            'factorial'   : lambda x: [x.simplify_factorial()],
+            'full'        : lambda x: [x.simplify_full()],
+            'hypergeom'   : lambda x: [x.simplify_hypergeometric()],
+            'log'         : lambda x: [x.simplify_log()],
+            'radical'     : lambda x: [x.canonicalize_radical()],
+            'rational'    : lambda x: [x.simplify_rational()],
+            'rectform'    : lambda x: [x.simplify_rectform()],
+            'trig'        : lambda x: [x.simplify_trig()],
+            'trig_red'    : lambda x: [x.trig_reduce()],
+            'expand'      : lambda x: [expand(x)],
+            'factor'      : lambda x: [factor(x)],
+            'real'        : lambda x: [x.simplify_real()]
         }
 
         def sympy_contains_decimal(x):
@@ -731,31 +801,38 @@ class Magic(object):
                 return any(map(sympy_contains_decimal,x.args))
             return x.is_real and not x.is_rational
 
-        def try_sympy_expand(x):
-            ret = []
-            for result in [
-                    self.SymPy.exp(x,basic=True),
-                    self.SymPy.exp(x,basic=False),
-                    self.SymPy.exp(x,trig=True)]:
-                if (sympy_contains_decimal(x) or
-                    not sympy_contains_decimal(result)):
-                    ret.append(result)
+        sympy_simplifiers = {
+            'separate'   : 'separatevars',
+            'bessel'     : 'besselsimp',
+            'log'        : 'logcombine',
+            'rad'        : 'radsimp',
+            'coll_sqrt'  : 'collect_sqrt',
+            'coll_const' : 'collect_const',
+            'rat'        : 'ratsimp',
+            'trig'       : 'trigsimp',
+            'pow'        : 'powsimp',
+            'powdenest'  : 'powdenest',
+            'comb'       : 'combsimp',
+            'sqrtdenest' : 'sqrtdenest',
+            'hyperexp'   : 'hyperexpand'
+        }
 
-            return [ret]
+        def try_sympy_factory(sympy_name, **kwargs):
+            def try_sympy(x):
+                result = getattr(self.SymPy, sympy_name)(x, **kwargs)
+                if (not sympy_contains_decimal(x) and
+                    sympy_contains_decimal(result)):
+                    return []
+                return [result]
 
-        def try_sympy_factor(x):
-            result = self.SymPy.fac(x)
-            if (not sympy_contains_decimal(x) and
-                sympy_contains_decimal(result)):
-                return []
-            return [result]
+            return try_sympy
 
-        def try_sympy_simplify(x):
-            result = self.SymPy.simp(x)
-            if (not sympy_contains_decimal(x) and
-                sympy_contains_decimal(result)):
-                return []
-            return [result]
+        for name, simplifier in sympy_simplifiers.items():
+            simplifiers['py_%s'%name] = try_sympy_factory(simplifier)
+
+        # broken on current SymPy (fixed on master)
+        # simplifiers['py_groebner'] = try_sympy_factory('trigsimp', method="groebner")
+        simplifiers['py_trig_fu'] = try_sympy_factory('trigsimp', method="fu")
 
         def try_partial_fractions(x):
             if len(x.variables()) == 1:
@@ -768,21 +845,19 @@ class Magic(object):
         def try_maxima_demoivre(x):
             return [sageobj(x._maxima_().demoivre())]
 
-        simplifiers['partial_fractions'] = try_partial_fractions
-        simplifiers['maxima_exponentialize'] = try_maxima_exponentialize
-        simplifiers['maxima_demoivre'] = try_maxima_demoivre
+        simplifiers['part_frac'] = try_partial_fractions
+        simplifiers['mx_euler'] = try_maxima_exponentialize
+        simplifiers['mx_demoivre'] = try_maxima_demoivre
 
-        if not fast:
-            simplifiers['sympy_expand'] = try_sympy_expand
-            simplifiers['sympy_factor'] = try_sympy_factor
-            simplifiers['sympy_simplify'] = try_sympy_simplify
-            simplifiers['real'] = lambda x: [x.simplify_real()],
+        if fast:
+            del simplifiers['real']
 
         forms = {x : []}
         old_forms = {}
 
         longest_output = -1
         form_count = 1
+        original_score = complexity_score(x)
 
         while True:
             new_forms = {}
@@ -801,8 +876,10 @@ class Magic(object):
                             if not (new_form in forms or
                                     new_form in old_forms or
                                     new_form in new_forms):
-                                new_forms[new_form] = path + [name]
-                                form_count += 1
+                                new_score = complexity_score(new_form)
+                                if new_score <= original_score * ratio:
+                                    new_forms[new_form] = path + [name]
+                                    form_count += 1
                     except (AttributeError, TypeError) as e:
                         pass
 
@@ -815,10 +892,10 @@ class Magic(object):
 
             if not new_forms: break
 
-        if progress: print " " * longest_output
+        if progress: print " " * longest_output + "\r",
 
         forms = list(old_forms.items())
-        forms = sorted(forms,key=lambda x: self.__process(x[0]))
+        forms = sorted(forms,key=lambda x: complexity_score(x[0]))
         if not return_paths:
             forms = map(lambda x: x[0], forms)
         return forms
