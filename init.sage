@@ -357,6 +357,18 @@ class Magic(object):
             return self.dispatch_relational(x, sympy.logcombine, **kwargs)
 
         @classmethod
+        def expand_power_exp(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.expand_power_exp, **kwargs)
+
+        @classmethod
+        def expand_power_base(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.expand_power_base, **kwargs)
+
+        @classmethod
+        def expand_log(self, x, **kwargs):
+            return self.dispatch_relational(x, sympy.expand_log, **kwargs)
+
+        @classmethod
         def radsimp(self, x, **kwargs):
             return self.dispatch_relational(x, sympy.radsimp, **kwargs)
 
@@ -759,11 +771,12 @@ class Magic(object):
         except AttributeError:
             pass
 
-        fast = False if "fast" not in kwargs else kwargs["fast"]
+        fast = True if "fast" not in kwargs else kwargs["fast"]
         return_paths = False if "path" not in kwargs else kwargs["path"]
         limit = (10 if fast else 20) if "limit" not in kwargs else kwargs["limit"]
         progress = False if "progress" not in kwargs else kwargs["progress"]
         ratio = 2.5 if "ratio" not in kwargs else kwargs["ratio"]
+        safe = True if "safe" not in kwargs else kwargs["safe"]
 
         def complexity_score(expr):
             weights = {
@@ -781,20 +794,31 @@ class Magic(object):
             return complexity
 
         simplifiers = {
-            'simp'        : lambda x: [x.simplify()],
-            'factorial'   : lambda x: [x.simplify_factorial()],
-            'full'        : lambda x: [x.simplify_full()],
-            'hypergeom'   : lambda x: [x.simplify_hypergeometric()],
-            'log'         : lambda x: [x.simplify_log()],
-            'radical'     : lambda x: [x.canonicalize_radical()],
-            'rational'    : lambda x: [x.simplify_rational()],
-            'rectform'    : lambda x: [x.simplify_rectform()],
-            'trig'        : lambda x: [x.simplify_trig()],
-            'trig_red'    : lambda x: [x.trig_reduce()],
-            'expand'      : lambda x: [expand(x)],
-            'factor'      : lambda x: [factor(x)],
-            'real'        : lambda x: [x.simplify_real()]
+            'simp'      : lambda x: [x.simplify()],
+            'factorial' : lambda x: [x.simplify_factorial()],
+            'full'      : lambda x: [x.simplify_full()],
+            'hypergeom' : lambda x: [x.simplify_hypergeometric()],
+            'rational'  : lambda x: [x.simplify_rational()],
+            'rectform'  : lambda x: [x.simplify_rectform(complexity_measure=None)],
+            'trig'      : lambda x: [x.simplify_trig()],
+            'trig_red'  : lambda x: [x.trig_reduce()],
+            'expand'    : lambda x: [x.expand()],
+            'exp_sum'   : lambda x: [x.expand_sum()],
+            'exp_trig1' : lambda x: [x.simplify_trig(expand=True)],
+            'exp_trig2' : lambda x: [x.expand_trig()],
+            'exp_trig3' : lambda x: [x.expand_trig(half_angles=True)],
+            'exp_rat'   : lambda x: [x.expand_rational()],
+            'factor'    : lambda x: [x.factor()],
         }
+
+        if not safe:
+            simplifiers.update({
+                'radical'   : lambda x: [x.canonicalize_radical()],
+                'real'      : lambda x: [x.simplify_real()],
+                'log'       : lambda x: [x.simplify_log()],
+                'exp_log1'  : lambda x: [x.expand_log()],
+                'exp_log2'  : lambda x: [x.expand_log(algorithm='powers')],
+            })
 
         def sympy_contains_decimal(x):
             if x.args:
@@ -804,6 +828,7 @@ class Magic(object):
         sympy_simplifiers = {
             'separate'   : 'separatevars',
             'bessel'     : 'besselsimp',
+            'exp_log'    : 'expand_log',
             'log'        : 'logcombine',
             'rad'        : 'radsimp',
             'coll_sqrt'  : 'collect_sqrt',
@@ -812,16 +837,18 @@ class Magic(object):
             'trig'       : 'trigsimp',
             'pow'        : 'powsimp',
             'powdenest'  : 'powdenest',
+            'pow_exp'    : 'expand_power_exp',
+            'pow_base'   : 'expand_power_base',
             'comb'       : 'combsimp',
             'sqrtdenest' : 'sqrtdenest',
-            'hyperexp'   : 'hyperexpand'
+            'exp_hyper'  : 'hyperexpand'
         }
 
         def try_sympy_factory(sympy_name, **kwargs):
             def try_sympy(x):
                 result = getattr(self.SymPy, sympy_name)(x, **kwargs)
-                if (not sympy_contains_decimal(x) and
-                    sympy_contains_decimal(result)):
+                if (not sympy_contains_decimal(x._sympy_()) and
+                    sympy_contains_decimal(result._sympy_())):
                     return []
                 return [result]
 
@@ -834,6 +861,11 @@ class Magic(object):
         # simplifiers['py_groebner'] = try_sympy_factory('trigsimp', method="groebner")
         simplifiers['py_trig_fu'] = try_sympy_factory('trigsimp', method="fu")
 
+        if not safe:
+            for name in ['pow', 'powdenest', 'pow_base', 'exp_log', 'log']:
+                simplifier = sympy_simplifiers[name]
+                simplifiers['py_%s_f'%name] = try_sympy_factory(simplifier, force=True)
+        
         def try_partial_fractions(x):
             if len(x.variables()) == 1:
                 return [x.partial_fraction(x.variables()[0])]
@@ -848,9 +880,6 @@ class Magic(object):
         simplifiers['part_frac'] = try_partial_fractions
         simplifiers['mx_euler'] = try_maxima_exponentialize
         simplifiers['mx_demoivre'] = try_maxima_demoivre
-
-        if fast:
-            del simplifiers['real']
 
         forms = {x : []}
         old_forms = {}
