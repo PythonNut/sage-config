@@ -470,7 +470,6 @@ class Magic(object):
             ]:
                 while re.search(r[0],x):
                     search = re.search(r[0],x)
-                    print "match"
                     x = x.replace(search.group(),r[1]%search.group("x"))
 
             # fix braces (will be smarter in the future)
