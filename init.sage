@@ -1194,5 +1194,6 @@ class Magic(object):
 
 S = Magic()
 
+latex.matrix_delimiters(left='[', right=']')
 %rehashx
 %colors Linux
