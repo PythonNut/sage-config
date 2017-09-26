@@ -866,9 +866,10 @@ class Magic(object):
                 simplifiers['py_%s_f'%name] = try_sympy_factory(simplifier, force=True)
         
         def try_partial_fractions(x):
-            if len(x.variables()) == 1:
-                return [x.partial_fraction(x.variables()[0])]
-            return []
+            result = []
+            for var in x.variables():
+                result.append(x.partial_fraction(var))
+            return result
 
         def try_maxima_exponentialize(x):
             return [sageobj(x._maxima_().exponentialize())]
