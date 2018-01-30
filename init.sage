@@ -909,7 +909,7 @@ class Magic(object):
                                 if new_score <= original_score * ratio:
                                     new_forms[new_form] = path + [name]
                                     form_count += 1
-                    except (AttributeError, TypeError) as e:
+                    except (AttributeError, TypeError, ArithmeticError) as e:
                         pass
 
             forms.update(new_forms)
