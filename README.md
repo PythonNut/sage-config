@@ -36,7 +36,8 @@ Installation
 ```bash
 cd ~/.sage
 git init
-git remote add origin http://github.com/PythonNut/sage-config
+git remote add origin git@github.com:PythonNut/sage-config.git
 git fetch -a
+git reset origin/master
 git checkout -t origin/master
 ```
