@@ -641,7 +641,7 @@ class Magic(object):
                    sage.rings.real_mpfr.RealLiteral,
                    sage.rings.real_mpfr.RealNumber],
 
-            "m" : [sage.matrix.matrix.is_Matrix],
+            "m" : [sage.structure.element.Matrix],
             "v" : [sage.structure.element.Vector],
             "i" : [int, Integer],
             "s" : [coll.Iterable],
