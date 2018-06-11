@@ -26,7 +26,6 @@ import collections as coll
 
 numpy       = np
 scipy       = sp
-matplotlib  = mpl
 collections = coll
 inf         = infinity
 
