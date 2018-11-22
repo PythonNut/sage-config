@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import scipy as sp
 
@@ -8,6 +9,9 @@ except: pass
 
 try:
     import matplotlib as mpl
+    if "DISPLAY" not in os.environ:
+        matplotlib.use('agg')
+
     from matplotlib import pyplot as plt
     matplotlib = mpl
     pyplot     = plt
