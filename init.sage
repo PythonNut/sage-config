@@ -15,11 +15,6 @@ except: pass
 
 try:
     import numexpr
-    import theano
-except: pass
-
-try:
-    import sklearn
 except: pass
 
 import collections as coll
