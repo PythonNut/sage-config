@@ -10,9 +10,10 @@ except: pass
 try:
     import matplotlib as mpl
     if "DISPLAY" not in os.environ:
-        matplotlib.use('agg')
+        matplotlib.use('TkAgg')
 
     from matplotlib import pyplot as plt
+
     matplotlib = mpl
     pyplot     = plt
 except: pass
