@@ -225,7 +225,7 @@ class Magic(object):
                 x=f.variables()[-1]
             y = var('y')
             g = (f - y).roots(x, multiplicities=False)
-            return [expr.subs(y=x) for expr in g]
+            return self.unravel([expr.subs(y=x) for expr in g])
         except RuntimeError as e:
             return []
 
