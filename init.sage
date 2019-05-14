@@ -79,7 +79,7 @@ class MetaLambdaBuilder(type):
         attr = '__{}__'
 
         sage_funcs = filter(lambda x:"sage.functions" in str(type(eval(x))), globals().keys())
-        sage_funcs.extend(['sqrt']) # I'm not sure what's special about sqrt.
+        sage_funcs.extend(['sqrt', 'factor']) # I'm not sure what's special about sqrt.
         for f in sage_funcs:
             def funfact(f):
                 def func(self, *a, **kw):
