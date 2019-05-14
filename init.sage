@@ -1057,7 +1057,7 @@ class Magic(object):
         if self.argParse("i",x):
             def get_at(t):
                 return t[int(x)]
-                return self.Function(get_at)
+            return self.Function(get_at)
 
         elif self.argParse("s",x):
             def get_mod(t):
