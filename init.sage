@@ -96,6 +96,7 @@ class MetaLambdaBuilder(type):
             setattr(self, f, funfact(f))
 
         for op in (x for x in dir(operator) if not x.startswith('__')):
+            if op == 'getitem': continue
             oper = getattr(operator, op)
 
             def func(self, n, oper=oper):
