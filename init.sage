@@ -66,10 +66,10 @@ def comp(*args):
 
 def pp(x,q=True):
     try:
-        print "\n"
-        print x._maxima_()
-        print "\n"
-    except: print x
+        print("\n")
+        print(x._maxima_())
+        print("\n")
+    except: print(x)
     if q: return x
 
 class MetaLambdaBuilder(type):
@@ -79,7 +79,7 @@ class MetaLambdaBuilder(type):
         super(MetaLambdaBuilder, self).__init__(*args, **kw)
         attr = '__{}__'
 
-        sage_funcs = filter(lambda x:"sage.functions" in str(type(eval(x))), globals().keys())
+        sage_funcs = [x for x in list(globals().keys()) if "sage.functions" in str(type(eval(x)))]
         sage_funcs.extend(['sqrt', 'factor']) # I'm not sure what's special about sqrt.
         for f in sage_funcs:
             def funfact(f):
@@ -118,8 +118,7 @@ class MetaLambdaBuilder(type):
             setattr(self, attr.format(op), func)
             setattr(self, attr.format('r' + op), rfunc)
 
-class LambdaBuilder():
-    __metaclass__ = MetaLambdaBuilder
+class LambdaBuilder(metaclass=MetaLambdaBuilder):
     def __init__(self, func):
         self.func = func
 
@@ -133,14 +132,13 @@ class LambdaBuilder():
         return out
 
 # Now play with the function f
-class Magic(object):
+class Magic(object, metaclass=MetaLambdaBuilder):
     """
     This is the magic SAGE class. It contains lots of functionality
     Magic
      - SymPy
      - LaTeX
     """
-    __metaclass__ = MetaLambdaBuilder
 
     class StatDistribution(object):
         import inspect
@@ -148,7 +146,7 @@ class Magic(object):
         def __init__(self, dist, fallback = None):
             self.dist = dist
             self.fallback = fallback
-            argspec = self.inspect.getargspec(self._parse_args)
+            argspec = self.inspect.getfullargspec(self._parse_args)
             self.order = len(argspec.args) - len(argspec.defaults)
 
         def __getattr__(self, name):
@@ -164,7 +162,7 @@ class Magic(object):
                         area += self.__call__(item.lower(), item.upper())
                     return area
 
-                args = map(float, args)
+                args = list(map(float, args))
 
                 if len(args) == self.order:
                     base, arg = args[:-1], args[-1]
@@ -238,7 +236,7 @@ class Magic(object):
         solutions = set()
         for ix, iy in it.product(eq_tx,eq_ty):
             solutions.add(tuple(solve(ix.rhs() == iy.rhs(),y)))
-            solutions =  map(self.unravel, solutions)
+            solutions =  list(map(self.unravel, solutions))
         return self.unravel(solutions)
 
     def sv(self,f,*var,**kwargs):
@@ -261,7 +259,7 @@ class Magic(object):
         # return out
         ret = []
         for solution in out:
-            solution = [k._sage_() == v._sage_() for k,v in solution.items()]
+            solution = [k._sage_() == v._sage_() for k,v in list(solution.items())]
             ret.append(self.unravel(solution))
 
         # Automatically simplify resulting expression
@@ -272,7 +270,7 @@ class Magic(object):
             variables.add(item.lhs())
         else:
             if len(variables) == 1:
-                return self.unravel(map(self.rhs, ret))
+                return self.unravel(list(map(self.rhs, ret)))
 
         return self.unravel(ret)
 
@@ -280,7 +278,7 @@ class Magic(object):
         return list(coll.OrderedDict.fromkeys(lst))
 
     def chunks(self, lst, n):
-        return zip(*[iter(lst)]*n)
+        return list(zip(*[iter(lst)]*n))
 
     def multimap(self, fns, lst):
         res = lst
@@ -289,9 +287,9 @@ class Magic(object):
                 res = f(res)
                 continue
             try:
-                temp = map(f, res)
+                temp = list(map(f, res))
                 if all(isinstance(x, bool) for x in temp):
-                    temp = filter(f, res)
+                    temp = list(filter(f, res))
             except TypeError:
                 temp = f(res)
             res = temp
@@ -440,19 +438,19 @@ class Magic(object):
 
             x = self.fracParse(x)
             replacements = [
-                ("*", ["\times", r"\times", "\cdot"]),
-                ("cos", ["\cos"]),
-                ("sin", ["\sin"]),
-                ("tan", ["\tan", r"\tan"]),
-                ("atan", ["\tan^{-1}", r"\tan^{-1}", "\atan", r"\atan"]),
-                ("acos", [r"\cos^{-1}", "\acos", r"\acos"]),
-                ("asin", [r"\sin^{-1}", "\asin", r"\asin"]),
+                ("*", [r"\times", r"\cdot"]),
+                ("cos", [r"\cos"]),
+                ("sin", [r"\sin"]),
+                ("tan", [r"\tan"]),
+                ("atan", [r"\tan^{-1}", r"\atan"]),
+                ("acos", [r"\cos^{-1}", r"\acos"]),
+                ("asin", [r"\sin^{-1}", r"\asin"]),
                 ("+", ["++", "--"]),
                 ("-", ["+-", "-+"]),
-                (", ", ["\n",r"\\"]),
+                (", ", ["\n", r"\\"]),
                 (")*(", [")("]),
-                ("", ["\right", r"\right", "\left"]),
-                ("pi", ["\pi", r"\pi"]),
+                ("", [r"\right", r"\left"]),
+                ("pi", [r"\pi"]),
             ]
 
             d = {w: repl for repl, words in replacements for w in words}
@@ -508,7 +506,7 @@ class Magic(object):
                 return self.f(o.f(x))
             return self.__class__(temp)
 
-        def __add__(self, x): return map(self, x)
+        def __add__(self, x): return list(map(self, x))
 
         def __sub__(self, x): return self.__call__(x)
             
@@ -600,9 +598,9 @@ class Magic(object):
 
         import scipy.stats
         stat_dists = []
-        stat_dists += scipy.stats._continuous_distns.__dict__.values()
-        stat_dists += scipy.stats._discrete_distns.__dict__.values()
-        for name, obj in scipy.stats.__dict__.items():
+        stat_dists += list(scipy.stats._continuous_distns.__dict__.values())
+        stat_dists += list(scipy.stats._discrete_distns.__dict__.values())
+        for name, obj in list(scipy.stats.__dict__.items()):
             if not hasattr(obj, "cdf"): continue
             if not hasattr(obj, "_parse_args"): continue
             if obj in stat_dists:
@@ -616,7 +614,7 @@ class Magic(object):
 
         self.mro.insert(2, scipy.stats)
 
-        for unit_type in units.__dict__["_Units__data"].keys():
+        for unit_type in list(units.__dict__["_Units__data"].keys()):
             attr = getattr(units, unit_type)
             if isinstance(attr, sage.symbolic.units.Units):
                 self.mro.append(attr)
@@ -786,7 +784,7 @@ class Magic(object):
             }
 
             complexity = sympy.count_ops(expr, visual=True)
-            for name, weight in weights.items():
+            for name, weight in list(weights.items()):
                 complexity = complexity.subs(sympy.Symbol(name), weight)
             complexity = complexity.replace(sympy.Symbol, type(sympy.S.One))
 
@@ -807,7 +805,7 @@ class Magic(object):
             'exp_trig2' : lambda x: [x.expand_trig()],
             'exp_trig3' : lambda x: [x.expand_trig(half_angles=True)],
             'exp_rat'   : lambda x: [x.expand_rational()],
-            'factor'    : lambda x: [x.factor()],
+            # 'factor'    : lambda x: [x.factor()],
         }
 
         if not safe:
@@ -853,7 +851,7 @@ class Magic(object):
 
             return try_sympy
 
-        for name, simplifier in sympy_simplifiers.items():
+        for name, simplifier in list(sympy_simplifiers.items()):
             simplifiers['py_%s'%name] = try_sympy_factory(simplifier)
 
         # broken on current SymPy (fixed on master)
@@ -890,18 +888,18 @@ class Magic(object):
 
         while True:
             new_forms = {}
-            for form, path in forms.items():
-                for name, simplifier in simplifiers.items():
+            for form, path in list(forms.items()):
+                for name, simplifier in list(simplifiers.items()):
                     if progress:
                         message = '%d %s → %s'%(form_count, ' → '.join(path), name)
-                        print message.ljust(longest_output) + "\r",
+                        print(message.ljust(longest_output) + "\r", end=' ')
                         longest_output = max(longest_output, len(message))
                         sys.stdout.flush()
 
                     try:
                         for new_form in simplifier(form):
                             if "." in str(new_form) and '.' not in str(form):
-                                print(form,path,name)
+                                print((form,path,name))
                             if not (new_form in forms or
                                     new_form in old_forms or
                                     new_form in new_forms):
@@ -921,12 +919,12 @@ class Magic(object):
 
             if not new_forms: break
 
-        if progress: print " " * longest_output + "\r",
+        if progress: print(" " * longest_output + "\r", end=' ')
 
         forms = list(old_forms.items())
         forms = sorted(forms,key=lambda x: complexity_score(x[0]))
         if not return_paths:
-            forms = map(lambda x: x[0], forms)
+            forms = [x[0] for x in forms]
         return forms
 
     # get simplest form for Expression
@@ -1042,8 +1040,8 @@ class Magic(object):
             ("S.horsepower", ["horsepower", "hp"]),
 
             # LaTeX oerators
-            ("*", ["\mul", "\times", "\\times", "\cdot"]),
-            ("/", ["\div"]),
+            ("*", [r"\mul", r"\times", r"\cdot"]),
+            ("/", [r"\div"]),
         ]
 
         d = {w: repl for repl, words in replacements for w in words}
@@ -1071,7 +1069,7 @@ class Magic(object):
             return vector(x)
 
         elif self.argParse("e+", x):
-            return self.unravel(map(S.forms, x))
+            return self.unravel(list(map(S.forms, x)))
 
         elif self.argParse("l",x):
             def get_at(t):
@@ -1104,7 +1102,7 @@ class Magic(object):
                 if isinstance(name, str):
                     getattr(lib, name)
                 else:
-                    if name not in lib.__dict__.values():
+                    if name not in list(lib.__dict__.values()):
                         raise AttributeError()
                 return lib
             except AttributeError:
@@ -1123,7 +1121,7 @@ class Magic(object):
             return self.str(args[0],**kwargs)
 
         elif self.argParse("a*",*args):
-            return self.unravel(map(list,args))
+            return self.unravel(list(map(list,args)))
 
         elif self.argParse("n*",*args):
             return vector(args)
@@ -1137,7 +1135,7 @@ class Magic(object):
             return S.sub(e,[v == args[2]]) - S.sub(e,[v == args[1]])
 
         elif self.argParse("e*",*args):
-            return self.unravel(map(lambda x: S.ss(x, **kwargs), args))
+            return self.unravel([S.ss(x, **kwargs) for x in args])
 
         elif self.argParse("e,e+",*args):
             sub = [[eq.lhs() == eq.rhs()] for eq in args[1]]
@@ -1163,7 +1161,7 @@ class Magic(object):
             return vector(args[0])
 
         elif self.argParse("e+", *args):
-            return self.unravel(map(self.ss,args[0]))
+            return self.unravel(list(map(self.ss,args[0])))
 
         elif self.argParse("c*", *args):
             temp = self.Function(args[0])
