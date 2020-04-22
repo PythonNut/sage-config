@@ -1197,3 +1197,4 @@ latex.blackboard_bold(True)
 latex.matrix_delimiters(left='[', right=']')
 %rehashx
 %colors Linux
+implicit_multiplication(3)
