@@ -31,12 +31,18 @@ alpha = ascii_lowercase
 import sympy, re
 latex.engine("pdflatex")
 
-scalars = [Integer,int,str,float,sage.rings.real_mpfr.RealLiteral,Rational]
+SCALARS = (
+    Integer,
+    int,
+    str,
+    float,
+    sage.rings.real_mpfr.RealLiteral,
+    Rational
+)
 
 y, z, a, b, c, i, k, t = var("y,z,a,b,c,i,k,t")
 theta = var("theta")
 F, f, h, g = function("F,f,h,g")
-Y = function("Y")(x)
 assume(x,"real")
 assume(y,"real")
 assume(z,"real")
