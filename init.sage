@@ -3,11 +3,6 @@ import numpy as np
 import scipy as sp
 
 try:
-    import pandas as pd
-    pandas = pd
-except: pass
-
-try:
     import matplotlib as mpl
     if "DISPLAY" not in os.environ:
         matplotlib.use('TkAgg')
@@ -579,7 +574,6 @@ class Magic(object, metaclass=MetaLambdaBuilder):
         _try_import(self.mro,"math")
         _try_import(self.mro,"cmath")
         _try_import(self.mro,"sympy")
-        _try_import(self.mro,"pandas")
         _try_import(self.mro,"theano")
         _try_import(self.mro,"sklearn")
         _try_import(self.mro,"string")
