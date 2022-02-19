@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import scipy as sp
+from IPython import get_ipython
+ipython = get_ipython()
 
 try:
     import matplotlib as mpl
@@ -1190,6 +1192,6 @@ S = Magic()
 
 latex.blackboard_bold(True)
 latex.matrix_delimiters(left='[', right=']')
-%rehashx
-%colors Linux
+ipython.run_line_magic("rehashx", "")
+ipython.run_line_magic("colors", "Linux")
 implicit_multiplication(3)
