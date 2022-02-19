@@ -182,7 +182,7 @@ class Magic(object, metaclass=MetaLambdaBuilder):
                 return self.fallback(*args)
 
         def __getitem__(self, x1):
-            if not isinstance(x1, coll.Iterable):
+            if not isinstance(x1, coll.abc.Iterable):
                 x1 = (x1,)
 
             if len(x1) == self.order:
@@ -204,7 +204,7 @@ class Magic(object, metaclass=MetaLambdaBuilder):
 
     class IterSortOperator(IterOperator):
         def __call__(self, *args, **kwargs):
-            if len(args) == 1 and isinstance(args[0], coll.Callable):
+            if len(args) == 1 and isinstance(args[0], coll.abc.Callable):
                 return self.__class__.__bases__[0](sorted, key=args[0])
             elif isinstance(args[0], numpy.ndarray):
                 return numpy.sort(*args, **kwargs)
@@ -637,15 +637,15 @@ class Magic(object, metaclass=MetaLambdaBuilder):
             "m" : [sage.structure.element.Matrix],
             "v" : [sage.structure.element.Vector],
             "i" : [int, Integer],
-            "s" : [coll.Iterable],
-            "h" : [coll.Hashable],
+            "s" : [coll.abc.Iterable],
+            "h" : [coll.abc.Hashable],
             "e" : [Expression],
             "l" : [list, tuple],
             "s" : [str],
             "d" : [dict],
             "*" : [object],
             "a" : [np.ndarray],
-            "c" : [coll.Callable],
+            "c" : [coll.abc.Callable],
         }
         arg = arg.split(",")
 
@@ -688,7 +688,7 @@ class Magic(object, metaclass=MetaLambdaBuilder):
                     parse += 1
 
                 elif arg[parse][-1] == "+":
-                    if isinstance(args[index],coll.Iterable):
+                    if isinstance(args[index],coll.abc.Iterable):
                         for item in args[index]:
                             for t in types[arg[parse][:-1]]:
                                 if not is_thing(item,t):
@@ -699,9 +699,9 @@ class Magic(object, metaclass=MetaLambdaBuilder):
                         return False
             elif arg[parse][:-2] in types:
                 if arg[parse][-2:] == "++":
-                    if isinstance(args[index],coll.Iterable):
+                    if isinstance(args[index],coll.abc.Iterable):
                         for i in args[index]:
-                            if not is_thing(i,coll.Iterable):
+                            if not is_thing(i,coll.abc.Iterable):
                                 return False
                             for item in i:
                                 for t in types[arg[parse][:-2]]:
@@ -717,14 +717,14 @@ class Magic(object, metaclass=MetaLambdaBuilder):
     @classmethod
     def unravel(self,x):
         try:
-            if isinstance(x,coll.Iterable) and len(x) == 1:
+            if isinstance(x,coll.abc.Iterable) and len(x) == 1:
                 return self.unravel(x[0])
         except: pass
         return x
 
     @classmethod
     def enravel(self,x):
-        if isinstance(x,coll.Iterable):
+        if isinstance(x,coll.abc.Iterable):
             return x
         else: return [x]
 
@@ -1168,7 +1168,7 @@ class Magic(object, metaclass=MetaLambdaBuilder):
             fns = []
             lsts = []
             for item in args:
-                if isinstance(item, coll.Callable):
+                if isinstance(item, coll.abc.Callable):
                     if isinstance(item, Expression):
                         fns.append(self.Function(item))
                     else:
