@@ -40,15 +40,6 @@ latex.engine("pdflatex")
 
 SCALARS = (Integer, int, str, float, sage.rings.real_mpfr.RealLiteral, Rational)
 
-y, z, a, b, c, i, k, t = var("y,z,a,b,c,i,k,t")
-theta = var("theta")
-F, f, h, g = function("F,f,h,g")
-assume(x, "real")
-assume(y, "real")
-assume(z, "real")
-assume(i, "integer")
-assume(k, "integer")
-
 
 def r(deg):
     return deg / 180 * pi
@@ -1239,3 +1230,57 @@ latex.matrix_delimiters(left="[", right="]")
 ipython.run_line_magic("rehashx", "")
 ipython.run_line_magic("colors", "Linux")
 implicit_multiplication(3)
+
+import string
+
+for letter in string.ascii_letters:
+    if letter not in globals():
+        globals()[letter] = var(letter)
+
+greeks = [
+    "alpha",
+    "beta",
+    "gamma",
+    "delta",
+    "epsilon",
+    "zeta",
+    "eta",
+    "theta",
+    "iota",
+    "kappa",
+    "mu",
+    "nu",
+    "xi",
+    "omicron",
+    "pi",
+    "rho",
+    "sigma",
+    "tau",
+    "upsilon",
+    "phi",
+    "chi",
+    "psi",
+    "omega",
+    "Beta",
+    "Gamma",
+    "Delta",
+    "Theta",
+    "Xi",
+    "Pi",
+    "Sigma",
+    "Phi",
+    "Psi",
+    "Omega",
+]
+
+for greek in greeks:
+    if greek not in globals():
+        globals()[greek] = var(greek)
+
+v = var("i")
+F, f, h, g = function("F,f,h,g")
+assume(x, "real")
+assume(y, "real")
+assume(z, "real")
+assume(i, "integer")
+assume(k, "integer")
